@@ -1,4 +1,4 @@
-# redis client组建
+# redis client组件
 ## 1.组件描述
 redis client用于redis客户端
 
@@ -24,12 +24,23 @@ func main() {
         log.Error("RedisSet: succ")
     }
   
-    value0, err := RedisGet("redis_test1", "key_test01")
+    value0, err := redisclient.RedisGet("redis_test1", "key_test01")
     if err != nil {
         log.Error("RedisGet: err: %+v", err)
     } else {
         log.Error("RedisGet: value: %s", value01)
-    }  
+    } 
+
+    //or
+    cli, err := redisclient.GetRedisClient("redis_test1")
+    if err != nil {
+    	log.Error("GetRedisClient: err: %+v", err)
+    	return
+    }
+    err = cli.Set("key_test05", "value05", 0)
+    log.Error("Set: err: %+v, value: %+v", err)
+    value05, err := cli.Get("key_test05")
+    log.Error("Get: err: %+v, value: %+v", err, value05)  
 }
 ```
 更多使用请参考[测试例子](https://github.com/airingone/air-redisclient/blob/master/redis_test.go)

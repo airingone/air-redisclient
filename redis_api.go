@@ -1,11 +1,5 @@
 package air_redisclient
 
-import (
-	"errors"
-	"github.com/go-redis/redis"
-	"time"
-)
-
 //redis api是为了方便使用而进行封装，这里需要用到的操作可以随着使用继续增加
 
 //Set
@@ -19,12 +13,7 @@ func RedisSet(configName string, key string, value string, expiredS int) error {
 		return err
 	}
 
-	err = cli.GetConn().Set(key, value, time.Duration(expiredS)*time.Second).Err()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return cli.Set(key, value, expiredS)
 }
 
 //Get
@@ -36,15 +25,7 @@ func RedisGet(configName string, key string) (string, error) {
 		return "", err
 	}
 
-	value, err := cli.GetConn().Get(key).Result()
-	if err != nil {
-		if err == redis.Nil {
-			return "", errors.New("empty")
-		}
-		return "", err
-	}
-
-	return value, nil
+	return cli.Get(key)
 }
 
 //MGet
@@ -56,16 +37,7 @@ func RedisMGet(configName string, key ...string) ([]interface{}, error) {
 		return nil, err
 	}
 
-	//cli.GetConn().Do("MGET", key...)
-	values, err := cli.GetConn().MGet(key...).Result()
-	if err != nil {
-		if err == redis.Nil {
-			return nil, errors.New("empty")
-		}
-		return nil, err
-	}
-
-	return values, nil
+	return cli.MGet(key...)
 }
 
 //Del
@@ -77,12 +49,7 @@ func RedisDel(configName string, key string) (int64, error) {
 		return -1, err
 	}
 
-	ret, err := cli.GetConn().Del(key).Result()
-	if err != nil {
-		return -1, err
-	}
-
-	return ret, nil
+	return cli.Del(key)
 }
 
 //Incr
@@ -94,12 +61,7 @@ func RedisIncr(configName string, key string) (int64, error) {
 		return -1, err
 	}
 
-	ret, err := cli.GetConn().Incr(key).Result()
-	if err != nil {
-		return -1, err
-	}
-
-	return ret, nil
+	return cli.Incr(key)
 }
 
 //Decr
@@ -111,12 +73,7 @@ func RedisDecr(configName string, key string) (int64, error) {
 		return -1, err
 	}
 
-	ret, err := cli.GetConn().Decr(key).Result()
-	if err != nil {
-		return -1, err
-	}
-
-	return ret, nil
+	return cli.Decr(key)
 }
 
 //SetNX-支持过期时间的NX，即不存在才返回成功，加上过期可实现分布式锁
@@ -130,12 +87,7 @@ func RedisSetNX(configName string, key string, value string, expiredS int) error
 		return err
 	}
 
-	err = cli.GetConn().SetNX(key, value, time.Duration(expiredS)*time.Second).Err()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return cli.SetNX(key, value, expiredS)
 }
 
 //HSet
@@ -149,12 +101,7 @@ func RedisHSet(configName string, key string, field string, value interface{}) (
 		return false, err
 	}
 
-	ret, err := cli.GetConn().HSet(key, field, value).Result()
-	if err != nil {
-		return false, err
-	}
-
-	return ret, nil
+	return cli.HSet(key, field, value)
 }
 
 //HGet
@@ -167,12 +114,7 @@ func RedisHGet(configName string, key string, field string) (string, error) {
 		return "", err
 	}
 
-	value, err := cli.GetConn().HGet(key, field).Result()
-	if err != nil {
-		return "", err
-	}
-
-	return value, nil
+	return cli.HGet(key, field)
 }
 
 //HDel
@@ -185,12 +127,7 @@ func RedisHDel(configName string, key string, field string) (int64, error) {
 		return -1, err
 	}
 
-	value, err := cli.GetConn().HDel(key, field).Result()
-	if err != nil {
-		return -1, err
-	}
-
-	return value, nil
+	return cli.HDel(key, field)
 }
 
 //HMGet
@@ -203,13 +140,5 @@ func RedisHMGet(configName string, key string, field ...string) ([]interface{}, 
 		return nil, err
 	}
 
-	values, err := cli.GetConn().HMGet(key, field...).Result()
-	if err != nil {
-		if err == redis.Nil {
-			return nil, errors.New("empty")
-		}
-		return nil, err
-	}
-
-	return values, nil
+	return cli.HMGet(key, field...)
 }
