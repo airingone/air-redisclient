@@ -1,6 +1,65 @@
 package air_redisclient
 
+import (
+	"errors"
+	"github.com/airingone/config"
+	"github.com/airingone/log"
+	"sync"
+)
+
 //redis api是为了方便使用而进行封装，这里需要用到的操作可以随着使用继续增加
+
+var AllRedisClients map[string]*RedisClient //全局的redis client
+var AllRedisClientsRmu sync.RWMutex
+
+//初始化全局redis对象，进程初始化的时候初始化一次
+//configName: 配置文件redis配置名
+func InitRedisClient(configName ...string) {
+	if AllRedisClients == nil {
+		AllRedisClients = make(map[string]*RedisClient)
+	}
+
+	for _, name := range configName {
+		config := config.GetRedisConfig(name)
+		cli, err := NewRedisClient(config.Addr, config.Password)
+		if err != nil {
+			log.Error("[REDIS]: InitRedisClient err, config name: %s, err: %+v", name, err)
+			continue
+		}
+
+		AllRedisClientsRmu.Lock()
+		if oldCli, ok := AllRedisClients[name]; ok { //	如果已存在则先关闭
+			_ = oldCli.GetConn().Close()
+		}
+		AllRedisClients[name] = cli
+		AllRedisClientsRmu.Unlock()
+		log.Info("[REDIS]: InitRedisClient succ, config name: %s", name)
+	}
+}
+
+//close all client
+func CloseRedisClient() {
+	if AllRedisClients == nil {
+		return
+	}
+	AllRedisClientsRmu.RLock()
+	defer AllRedisClientsRmu.RUnlock()
+	for _, cli := range AllRedisClients {
+		cli.Close()
+	}
+}
+
+//get client对象
+//configName: 配置文件redis配置名
+func GetRedisClient(configName string) (*RedisClient, error) {
+	AllRedisClientsRmu.RLock()
+	defer AllRedisClientsRmu.RUnlock()
+	if _, ok := AllRedisClients[configName]; !ok {
+		return nil, errors.New("redis client not exist")
+	}
+
+	return AllRedisClients[configName], nil
+}
 
 //Set
 //configName: redis配置名

@@ -39,15 +39,18 @@ func TestRedisClient(t *testing.T) {
 	log.Error("RedisMGet: err: %+v, value: %+v", err, value04)
 
 	//or
-	cli, err := GetRedisClient("redis_test1")
+	redisconfig := config.GetRedisConfig("redis_test1")
+	cli, err := NewRedisClient(redisconfig.Addr, redisconfig.Password)
 	if err != nil {
 		log.Error("GetRedisClient: err: %+v", err)
 		return
 	}
 	err = cli.Set("key_test05", "value05", 0)
-	log.Error("Set: err: %+v, value: %+v", err)
+	log.Error("Set: err: %+v", err)
 	value05, err := cli.Get("key_test05")
 	log.Error("Get: err: %+v, value: %+v", err, value05)
+
+	cli.Close()
 }
 
 //brew install redis
